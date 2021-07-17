@@ -1,5 +1,6 @@
 
 import os
+from typing import Sequence
 import torch
 import torch.nn as nn
 import torchaudio
@@ -9,32 +10,32 @@ from Generator import Generator
 
 torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 
+device = torch.device("cuda")
+
 epochs = 10
+lr = 0.001
+seq_lenght = 44100
+
+def load_Data(data_path):
+    waveform, sample_rate = torchaudio.load( data_path ) #supports only wav files P.S.: Waveform can be to chanaled --> 2 dim tensor
+    #print(waveform.shape)
+    #print(sample_rate)
+    return waveform, sample_rate
+
+def iterator(waveform):
+    pass
+
+def convert_data(data):
+    data = data.unsqueeze(0)
+    data = data.permute(2, 0, 1)
+    return data
+
+def unconvert_data():
+    pass
+#waveform = waveform[:][:10000].unsqueeze(0)
 
 
-
-data_path = os.path.join("data", "sample3.wav")
-save_path = os.path.join("saved", "sample3changed.wav")
-#print(data_path)
-
-#print(str(torchaudio.get_audio_backend()))
-waveform, sample_rate = torchaudio.load( data_path ) #supports only wav files P.S.: Waveform can be to chanaled --> 2 dim tensor
-print(waveform.shape)
-print(sample_rate)
-
-model = Generator(2, 1, 1)
-
-
-plt.plot(waveform[0][:10000])
-plt.plot(waveform[1][:10000])
-plt.show()
-
-
-
-waveform = waveform[:][:10000].unsqueeze(0)
-
-
-
+'''
 waveform = waveform.permute(2, 0, 1)
 print(type(waveform))
 output = model(waveform[:][:1000000])
@@ -45,15 +46,35 @@ plt.plot(output)
 torchaudio.save(save_path, output, 44100)
 #plt.plot(output[1])
 plt.show()
-
-
-'''
-for track in os.listdir("data\\"):
-
-    for epoch in epochs:
-        pass
 '''
 
 
+model = Generator(2, 1, 1).to(device)
+params = model.parameters()
+optimizer = torch.optim.Adam(params, lr = lr)
+loss_function = torch.nn.MSELoss()
 
-#playsound( data_path + "sample 1.mp3")
+
+
+#for track in os.listdir("data\\"):
+for epoch in range(epochs):
+
+    for song in range(1, 5):
+        data_path = os.path.join("data", f"sample ({song}).wav")
+        waveform, sample_rate = load_Data(data_path)
+        song_lenght = waveform.shape[1] - seq_lenght
+
+        for idx in range(song_lenght):
+            data = convert_data(waveform[idx:idx+seq_lenght]).to(device) # takes the part of a song as a sequence
+            label = convert_data(waveform[idx+1:idx+1+seq_lenght]).to(device) # takes the part of a song as a sequence the same lenght as data but 1 sample further
+            print(data.shape)
+            output = model(data)
+            loss = loss_function(output, label)
+
+            print(output.shape)
+            plt.plot(output)
+
+            optimizer.zero_grad()
+            loss.backwards()
+            optimizer.step()
+
