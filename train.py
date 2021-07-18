@@ -14,7 +14,7 @@ device = torch.device("cuda")
 
 epochs = 10
 lr = 0.001
-seq_lenght = 44100
+seq_lenght = 88200
 
 def load_Data(data_path):
     waveform, sample_rate = torchaudio.load( data_path ) #supports only wav files P.S.: Waveform can be to chanaled --> 2 dim tensor
@@ -49,7 +49,7 @@ plt.show()
 '''
 
 
-model = Generator(2, 1, 1).to(device)
+model = Generator(2, 2, 1).to(device)
 params = model.parameters()
 optimizer = torch.optim.Adam(params, lr = lr)
 loss_function = torch.nn.MSELoss()
@@ -65,16 +65,17 @@ for epoch in range(epochs):
         song_lenght = waveform.shape[1] - seq_lenght
 
         for idx in range(song_lenght):
-            data = convert_data(waveform[idx:idx+seq_lenght]).to(device) # takes the part of a song as a sequence
-            label = convert_data(waveform[idx+1:idx+1+seq_lenght]).to(device) # takes the part of a song as a sequence the same lenght as data but 1 sample further
-            print(data.shape)
-            output = model(data)
-            loss = loss_function(output, label)
+            data = convert_data(waveform[:, idx:idx+seq_lenght]).to(device) # takes the part of a song as a sequence
+            label = convert_data(waveform[:, idx+1:idx+1+seq_lenght]).to(device) # takes the part of a song as a sequence the same lenght as data but 1 sample further
 
-            print(output.shape)
-            plt.plot(output)
+            output = model(data)
+            loss = loss_function(output[0], label)
+            #print(output[0].shape)
+            #print(output.shape)
+            #plt.plot(output)
 
             optimizer.zero_grad()
-            loss.backwards()
+            loss.backward()
             optimizer.step()
+            a = input()
 
