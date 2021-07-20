@@ -10,8 +10,13 @@ class Generator(nn.Module):
 
     def forward(self, x):
 
-        x = self.rnn1(x)
+        x, h_out = self.rnn1(x)
 
-        return x
+        return x, h_out
+
+    def running_forward(self, x, h_out):
+
+        x, h_out = self.rnn1(x, h_out)
+        return x, h_out
 
 
